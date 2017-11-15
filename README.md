@@ -1,7 +1,7 @@
 # -SC-door2-0.4-setup
 This is a setup script for brittylicious's door2 0.4 script
 
-How to use:
+# How to use:
 1. place this script in the door your want to set up
 2. click on the door and a menu will pop up
 3. make sure the door is in the position you want(either opened or close)
