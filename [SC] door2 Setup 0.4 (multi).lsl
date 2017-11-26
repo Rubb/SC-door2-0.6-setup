@@ -1,5 +1,20 @@
+string closePos;
+string closeRot;
+string openPos;
+string openRot;
 
-string prefix= "dr_"; //*** PREFIX IS HERE ****
+rotation initRot;
+vector initPos;
+list initLink =[];
+
+
+integer i;
+integer j;
+integer var;
+integer length;
+integer cnt;
+
+string prefix= "dr_"; //*** DEFAULT PREFIX IS HERE ****
 list link=[];
 list linkName=[];
 list linkOpen=[];
@@ -8,24 +23,13 @@ list alpha=["","b","c","d","e","f","g","h","i"];
 
 list linkInit=[];
 
-string closePos;
-string closeRot;
-string openPos;
-string openRot;
 
-rotation initRot;
-vector initPos;
-
-integer i;
-integer j;
-integer var;
-integer length;
-integer cnt;
 
 find_link()
-{
+{    
     integer prims = llGetNumberOfPrims();
     integer index=1;
+    prefix= llList2String(llGetLinkPrimitiveParams(LINK_THIS, [ PRIM_DESC ]), 0);   
     while(prims--)
     {
         string name = llGetLinkName(index);
@@ -37,26 +41,59 @@ find_link()
         index++;
     }
   cnt = llGetListLength(linkName);
-  llOwnerSay("Number of linked parts found:" +(string)cnt);
+  llOwnerSay("Prefix:"+prefix);
+  llOwnerSay("Number of linked parts found= " +(string)cnt);
 }
 
-reset()
+
+
+clear()
 {
  closePos="";
  closeRot="";
  openPos="";
  openRot="";
+ linkName =[];
+ link =[];
  linkClose = [];
  linkOpen = [];
  cnt=0;
-// llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_POS_LOCAL, initPos, PRIM_ROT_LOCAL, initRot]);
+}
+
+
+reset()
+{
+ llSetLinkPrimitiveParamsFast(LINK_THIS, [PRIM_POS_LOCAL, initPos, PRIM_ROT_LOCAL, initRot]);
+ if(link!=[])
+ { 
+   i=0;
+   length = llGetListLength(link);
+   var=0;
+   j=0;
+   while(i++ < length); 
+   {
+    llSay(0,(string)i+" , "+(string)j+" , "+(string)var+ " , "+(string)length);
+    j=i+var;
+    llSetLinkPrimitiveParams(llList2Integer(link, i),[PRIM_POS_LOCAL,llList2Vector(linkInit, i),PRIM_ROT_LOCAL,llList2Rot(linkInit, j)]);
+    var=var+1;
+   }           
+ }
 }
 
 init()
 {
  initRot= llGetLocalRot();
- initPos= llGetLocalPos(); 
+ initPos= llGetLocalPos();
+ if(link!=[])
+ {
+  i=0;
+  length = llGetListLength(link);
+  do
+   linkInit = linkInit +  llGetLinkPrimitiveParams(llList2Integer(link, i),[PRIM_POS_LOCAL,PRIM_ROT_LOCAL]);
+  while(++i < length);            
+  }
 }
+
 
 dump()
 {
@@ -68,24 +105,25 @@ if(linkName!=[])
             + "\nrotation open_rotation = " + openRot + ";"
             +"\n"
              );        
-    	i=0;
-      	length = llGetListLength(linkName);
-      	var=0;
-      	while (i < length)
-        {
-        	j=i+var;
-        	llOwnerSay("\nstring link_name =\""+llList2String(linkName, i)+"\";"
-         	+"\nvector link"+llList2String(alpha, i)+"_close_position = "+llList2String(linkClose, j)+";"
-         	+"\nrotation link"+llList2String(alpha, i)+"_close_rotation ="+llList2String(linkClose, j+1)+";"
-         	+"\nvector link"+llList2String(alpha, i)+"_open_position ="+llList2String(linkOpen, j)+";"
-         	+"\nrotation link"+llList2String(alpha, i)+"_open_rotation ="+llList2String(linkOpen, j+1)+";"
-        );
-        ++i;
-        var=var+1;
+       i=0;
+       length = llGetListLength(linkName);
+       var=0;
+       j=0;
+       while (i < length)
+       {
+        j=i+var;
+        llOwnerSay("\nstring link_name =\""+llList2String(linkName, i)+"\";"
+         +"\nvector link"+llList2String(alpha, i)+"_close_position = "+llList2String(linkClose, j)+";"
+         +"\nrotation link"+llList2String(alpha, i)+"_close_rotation ="+llList2String(linkClose, j+1)+";"
+         +"\nvector link"+llList2String(alpha, i)+"_open_position ="+llList2String(linkOpen, j)+";"
+         +"\nrotation link"+llList2String(alpha, i)+"_open_rotation ="+llList2String(linkOpen, j+1)+";"
+         );
+         ++i;
+         var=var+1;
        }       
-}
-else
-{ llOwnerSay("\nvector close_position = " + closePos + ";"
+ }
+  else
+ { llOwnerSay("\nvector close_position = " + closePos + ";"
             + "\nrotation close_rotation = " + closeRot + ";"
             + "\n\nvector open_position = " + openPos + ";"
             + "\nrotation open_rotation = " + openRot + ";"
@@ -104,11 +142,11 @@ integer listenHandle;
 
 default
 {
-    state_entry()
-    {
+     state_entry()
+    {  clear();
        find_link();
        init();
-       reset();   
+       
        dialogChannel = -1 - (integer)("0x" + llGetSubString( (string)llGetKey(), -7, -1) ); 
        llOwnerSay("Setup loaded");
     }
@@ -121,7 +159,7 @@ default
     }
     
     
-       listen(integer channel, string name, key id, string message)
+    listen(integer channel, string name, key id, string message)
     {
         if (message == "Set Open")
         {          
@@ -140,18 +178,18 @@ default
         }
         if (message == "Set Close")
         {
-            closePos = (string)llGetLocalPos();
-            closeRot = (string)llGetLocalRot();
-            if(link!=[])
-            {
-                i=0;
-                length = llGetListLength(link);
+             closePos = (string)llGetLocalPos();
+             closeRot = (string)llGetLocalRot();
+             if(link!=[])
+             {
+                 i=0;
+                 length = llGetListLength(link);
                 do
                  linkClose = linkClose + llGetLinkPrimitiveParams(llList2Integer(link, i),[PRIM_POS_LOCAL,PRIM_ROT_LOCAL]);
                 while(++i < length);
                 
-            }
-            llOwnerSay("Closed set");
+             }
+              llOwnerSay("Closed set");
         }
         if (message == "Done")
         {
