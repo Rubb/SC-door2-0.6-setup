@@ -193,7 +193,7 @@ default
            else
            {
             dump();
-           // llRemoveInventory(llGetScriptName());
+            llRemoveInventory(llGetScriptName());
            }
         }
         if (message == "Reset")
